@@ -2,143 +2,119 @@ import asyncio
 import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# --- СТАНИ ---
-class SellState(StatesGroup):
-    choosing_game = State()
-    description = State()
-    photos = State()
-    confirm = State()
-
-# --- БАЗА (тимчасова) ---
+# --- ДАНІ (поки прості) ---
 accounts = {
-    "gta": [],
-    "pubg": [],
-    "ua": []
+    "pubg": [
+        {"name": "🔥 PUBG Conqueror Account"},
+        {"name": "💎 PUBG Premium Account"}
+    ]
 }
+
+users = {}  # тут буде профіль
+
+# --- ГОЛОВНЕ МЕНЮ ---
+def main_menu():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="👤 Мій профіль"), KeyboardButton(text="📋 Список аккаунтів")],
+            [KeyboardButton(text="🎮 Ігри для продажі аккаунтів")]
+        ],
+        resize_keyboard=True
+    )
 
 # --- СТАРТ ---
 @dp.message(F.text == "/start")
 async def start(message: Message):
-    kb = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="🚀 Стартуємо!")]],
-        resize_keyboard=True
-    )
-    await message.answer("Привіт 👋", reply_markup=kb)
+    user_id = message.from_user.id
 
-# --- РОЛЬ ---
-@dp.message(F.text == "🚀 Стартуємо!")
-async def role(message: Message):
-    kb = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Покупець"), KeyboardButton(text="Продавець")]],
-        resize_keyboard=True
-    )
-    await message.answer("Ким ви являєтесь?", reply_markup=kb)
+    if user_id not in users:
+        users[user_id] = {"rating": 5, "sold": 0}
+
+    await message.answer("Привіт 👋", reply_markup=main_menu())
 
 # =====================
-# 🧑‍💼 ПРОДАВЕЦЬ
+# 👤 ПРОФІЛЬ
 # =====================
 
-@dp.message(F.text == "Продавець")
-async def seller_start(message: Message, state: FSMContext):
+@dp.message(F.text == "👤 Мій профіль")
+async def profile(message: Message):
+    user = users.get(message.from_user.id)
+
+    text = f"""
+👤 Ваш профіль:
+
+⭐ Рейтинг: {user['rating']}
+📦 Продано аккаунтів: {user['sold']}
+"""
+    await message.answer(text)
+
+# =====================
+# 📋 СПИСОК АККАУНТІВ
+# =====================
+
+@dp.message(F.text == "📋 Список аккаунтів")
+async def accounts_menu(message: Message):
     kb = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Ua Online")],
-            [KeyboardButton(text="Ukraine GTA")],
-            [KeyboardButton(text="Pubg")]
+            [KeyboardButton(text="Ua online (скоро)")],
+            [KeyboardButton(text="Pubg")],
+            [KeyboardButton(text="Ukraine GTA (скоро)")],
         ],
         resize_keyboard=True
     )
-    await state.set_state(SellState.choosing_game)
-    await message.answer("В якій грі хочете продати аккаунт?", reply_markup=kb)
 
-# --- ВИБІР ГРИ ---
-@dp.message(SellState.choosing_game)
-async def choose_game(message: Message, state: FSMContext):
-    game_map = {
-        "Ukraine GTA": "gta",
-        "Pubg": "pubg",
-        "Ua Online": "ua"
-    }
+    await message.answer("Оберіть гру:", reply_markup=kb)
 
-    game = game_map.get(message.text)
-    if not game:
-        return
+# --- PUBG АККАУНТИ ---
+@dp.message(F.text == "Pubg")
+async def pubg_accounts(message: Message):
+    kb = InlineKeyboardMarkup(inline_keyboard=[])
 
-    await state.update_data(game=game)
-    await state.set_state(SellState.description)
+    for i, acc in enumerate(accounts["pubg"]):
+        kb.inline_keyboard.append([
+            InlineKeyboardButton(
+                text=acc["name"],
+                callback_data=f"view_{i}"
+            )
+        ])
 
-    await message.answer("Опишіть ваш аккаунт, що в ньому є:")
+    await message.answer("🔥 Список аккаунтів PUBG:", reply_markup=kb)
 
-# --- ОПИС ---
-@dp.message(SellState.description)
-async def description(message: Message, state: FSMContext):
-    await state.update_data(description=message.text, photos=[])
-    await state.set_state(SellState.photos)
-
-    await message.answer("Скиньте 3 фотки вашого аккаунта")
-
-# --- ФОТО ---
-@dp.message(SellState.photos)
-async def photos(message: Message, state: FSMContext):
-    if not message.photo:
-        return
-
-    data = await state.get_data()
-    photos = data.get("photos", [])
-
-    photos.append(message.photo[-1].file_id)
-    await state.update_data(photos=photos)
-
-    if len(photos) < 3:
-        await message.answer(f"Отримано {len(photos)}/3 фото")
-        return
+# --- ПЕРЕГЛЯД АККАУНТА ---
+@dp.callback_query(F.data.startswith("view_"))
+async def view_account(callback: CallbackQuery):
+    index = int(callback.data.split("_")[1])
+    acc = accounts["pubg"][index]
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Так", callback_data="sell_yes")],
-        [InlineKeyboardButton(text="Ні", callback_data="sell_no")]
+        [InlineKeyboardButton(text="Купити", callback_data="buy")],
     ])
 
-    await state.set_state(SellState.confirm)
-
-    await message.answer(
-        "Для першого разу безкоштовно.\nДалі 20₴\n\nВи хочете виставити аккаунт?",
+    await callback.message.answer(
+        f"📦 {acc['name']}\n\nХочете купити?",
         reply_markup=kb
     )
 
-# --- ПІДТВЕРДЖЕННЯ ---
-@dp.callback_query(F.data == "sell_no")
-async def cancel_sell(callback, state: FSMContext):
-    await state.clear()
-    await callback.message.answer("Скасовано ❌ Напишіть /start")
+# =====================
+# 🎮 ІГРИ ДЛЯ ПРОДАЖУ
+# =====================
 
-@dp.callback_query(F.data == "sell_yes")
-async def confirm_sell(callback, state: FSMContext):
-    data = await state.get_data()
-
-    game = data["game"]
-    description = data["description"]
-
-    accounts[game].append(description)
-
-    await callback.message.answer("✅ Ваш аккаунт виставлено!")
-
-    # показ списку
-    text = "📋 Список аккаунтів:\n\n"
-    for acc in accounts[game]:
-        text += f"- {acc}\n"
-
-    await callback.message.answer(text)
-
-    await state.clear()
+@dp.message(F.text == "🎮 Ігри для продажі аккаунтів")
+async def games_for_sell(message: Message):
+    await message.answer(
+        "🎮 Доступні ігри:\n\n"
+        "• Ua Online\n"
+        "• Ukraine GTA\n"
+        "• Pubg\n\n"
+        "Функція продажу вже частково є 😉"
+    )
 
 # =====================
 # ▶️ ЗАПУСК
