@@ -8,7 +8,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-WEB_URL = "https://YOUR-APP.up.railway.app"
+WEB_URL = "https://fffg-production.up.railway.app"  # твій домен
 
 kb = ReplyKeyboardMarkup(
     keyboard=[
@@ -20,13 +20,12 @@ kb = ReplyKeyboardMarkup(
 @dp.message(F.text == "/start")
 async def start(message: Message):
     user_id = message.from_user.id
-
-    ref_link = f"https://t.me/YOUR_BOT?start={user_id}"
+    ref = f"https://t.me/YOUR_BOT?start={user_id}"
 
     await message.answer(
         f"🐟 Fish Cash\n\n"
         f"ID: {user_id}\n"
-        f"Реферальне посилання:\n{ref_link}",
+        f"Referral:\n{ref}",
         reply_markup=kb
     )
 
