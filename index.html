@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body style="background:#0f172a;color:white;font-family:Arial">
+
+<h2 style="text-align:center">🐟 Fish Cash</h2>
+
+<div id="app"></div>
+
+<script>
+const tg = Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const userId = tg.initDataUnsafe?.user?.id || "test";
+
+let fc = 100;
+let gc = 10;
+
+async function loadUser(){
+  let res = await fetch("https://YOUR-Railway-URL/user", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({id:userId})
+  });
+
+  let data = await res.json();
+  fc = data.fc;
+  gc = data.gc;
+
+  profile();
+}
+
+function profile(){
+  document.getElementById("app").innerHTML = `
+  <div>
+    <p>ID: ${userId}</p>
+    <p>FC: ${fc}</p>
+    <p>GC: ${gc}</p>
+
+    <button onclick="fishing()">Fishing</button>
+    <button onclick="donate()">Donate</button>
+  </div>`;
+}
+
+function fishing(){
+  document.getElementById("app").innerHTML = `
+  <h3>🎣 Fishing</h3>
+
+  <input id="bet" type="number" value="10">
+
+  <select id="cur">
+    <option value="fc">FC</option>
+    <option value="gc">GC</option>
+  </select>
+
+  <button onclick="go()">Fish</button>
+  <button onclick="profile()">Back</button>
+  `;
+}
+
+async function go(){
+  let bet = +document.getElementById("bet").value;
+  let cur = document.getElementById("cur").value;
+
+  let res = await fetch("https://YOUR-Railway-URL/fish", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({id:userId, bet, currency:cur})
+  });
+
+  let data = await res.json();
+
+  fc = data.fc;
+  gc = data.gc;
+
+  alert(data.result + (data.win ? " WIN x1.5" : " LOSE"));
+  fishing();
+}
+
+function donate(){
+  document.getElementById("app").innerHTML = `
+  <h3>💰 Donate</h3>
+  <p>soon...</p>
+  <button onclick="profile()">Back</button>
+  `;
+}
+
+loadUser();
+</script>
+
+</body>
+</html>
