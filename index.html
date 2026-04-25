@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<h2>🐟 Fish Cash</h2>
+
+<button onclick="profile()">Profile</button>
+<button onclick="fishing()">Fishing</button>
+<button onclick="donate()">Donate</button>
+
+<div id="app"></div>
+
+<script>
+let fc = 100;
+let gc = 10;
+
+function profile(){
+  document.getElementById("app").innerHTML = `
+  <h3>Profile</h3>
+  ID: ${Telegram.WebApp.initDataUnsafe.user.id}<br>
+  FC: ${fc}<br>
+  GC: ${gc}<br>
+  Referral: +10 FC
+  `;
+}
+
+function donate(){
+  document.getElementById("app").innerHTML = "Donate скоро";
+}
+
+function fishing(){
+  document.getElementById("app").innerHTML = `
+  <h3>Fishing</h3>
+  FC: ${fc} | GC: ${gc}<br><br>
+
+  Ставка:
+  <input id="bet" type="number" value="10"><br><br>
+
+  <select id="cur">
+    <option value="fc">Fish Coin</option>
+    <option value="gc">Gold Coin</option>
+  </select><br><br>
+
+  <button onclick="go()">🎣 Ловити</button>
+  `;
+}
+
+function go(){
+  let bet = parseInt(document.getElementById("bet").value);
+  let cur = document.getElementById("cur").value;
+
+  if(cur === "fc" && bet < 10){
+    alert("мін 10 FC"); return;
+  }
+
+  if(cur === "gc" && bet < 1){
+    alert("мін 1 GC"); return;
+  }
+
+  let r = Math.random();
+  let win = r > 0.5;
+
+  if(cur === "fc"){
+    fc -= bet;
+    if(win) fc += bet * 1.5;
+  } else {
+    gc -= bet;
+    if(win) gc += bet * 1.5;
+  }
+
+  alert(win ? "🐟 Виграш x1.5" : "🗑️ Програш");
+  fishing();
+}
+</script>
+
+</body>
+</html>
