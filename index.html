@@ -2,6 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -57,7 +59,6 @@ body {
 <body>
 
 <div class="header">🐟 Fish Cash</div>
-
 <div class="container" id="app"></div>
 
 <div class="nav">
@@ -67,9 +68,20 @@ body {
 </div>
 
 <script>
-let fc = 100;
-let gc = 10;
+// ================= SAFE INIT =================
+Telegram.WebApp?.ready();
+Telegram.WebApp?.expand();
 
+// ================= SAVE SYSTEM =================
+let fc = parseFloat(localStorage.getItem("fc")) || 100;
+let gc = parseFloat(localStorage.getItem("gc")) || 10;
+
+function save(){
+  localStorage.setItem("fc", fc);
+  localStorage.setItem("gc", gc);
+}
+
+// ================= UI ACTIVE =================
 function setActive(btnId){
   document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
   document.getElementById(btnId).classList.add("active");
@@ -79,14 +91,14 @@ function setActive(btnId){
 function profile(){
   setActive("btnProfile");
 
-  let user = Telegram.WebApp.initDataUnsafe.user;
+  let user = Telegram.WebApp?.initDataUnsafe?.user || { id: "guest" };
 
   document.getElementById("app").innerHTML = `
     <div class="card">
       <h3>👤 Profile</h3>
-      ID: ${user?.id || "unknown"}<br><br>
-      💰 Fish Coin: ${fc}<br>
-      💎 Gold Coin: ${gc}<br><br>
+      ID: ${user.id}<br><br>
+      💰 Fish Coin: ${fc.toFixed(2)}<br>
+      💎 Gold Coin: ${gc.toFixed(2)}<br><br>
       🔗 Referral: +10 FC за друга
     </div>
   `;
@@ -101,7 +113,7 @@ function fishing(){
       <h3>🎣 Fishing</h3>
 
       Баланс:<br>
-      FC: ${fc} | GC: ${gc}<br><br>
+      FC: ${fc.toFixed(2)} | GC: ${gc.toFixed(2)}<br><br>
 
       Ставка:<br>
       <input id="bet" type="number" value="10"><br><br>
@@ -131,8 +143,13 @@ function donate(){
 
 // ================= GAME =================
 function go(){
-  let bet = parseInt(document.getElementById("bet").value);
+  let bet = parseFloat(document.getElementById("bet").value);
   let cur = document.getElementById("cur").value;
+
+  if(isNaN(bet) || bet <= 0){
+    alert("Введи правильну ставку");
+    return;
+  }
 
   if(cur === "fc" && bet < 10){
     alert("Мінімум 10 FC");
@@ -144,19 +161,24 @@ function go(){
     return;
   }
 
-  let rand = Math.random();
-  let win = rand > 0.5;
+  if(cur === "fc" && fc < bet){
+    alert("Недостатньо FC");
+    return;
+  }
+
+  if(cur === "gc" && gc < bet){
+    alert("Недостатньо GC");
+    return;
+  }
+
+  let win = Math.random() > 0.5;
 
   let fish = ["🐟 Карась", "🐠 Короп", "🦈 Щука"];
   let trash = ["🗑️ Сміття"];
 
-  let result;
-
-  if(win){
-    result = fish[Math.floor(Math.random() * fish.length)];
-  } else {
-    result = trash[0];
-  }
+  let result = win
+    ? fish[Math.floor(Math.random() * fish.length)]
+    : trash[0];
 
   if(cur === "fc"){
     fc -= bet;
@@ -166,12 +188,17 @@ function go(){
     if(win) gc += bet * 1.5;
   }
 
-  alert(win ? result + " → Виграш x1.5" : result + " → Програш");
+  save();
+
+  alert(win 
+    ? `${result} → Виграш x1.5` 
+    : `${result} → Програш`
+  );
 
   fishing();
 }
 
-// старт
+// ================= START =================
 profile();
 </script>
 
