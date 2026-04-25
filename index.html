@@ -5,85 +5,173 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-body { background:#0f172a; color:white; font-family:Arial; text-align:center; }
-.nav { position:fixed; bottom:0; width:100%; display:flex; }
-.nav button { flex:1; padding:15px; background:#1e293b; color:white; border:none; }
-.card { margin:20px; padding:20px; background:#1e293b; border-radius:10px; }
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+}
+
+.header {
+  text-align: center;
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.container {
+  padding: 20px;
+  padding-bottom: 80px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  background: #1e293b;
+}
+
+.nav button {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  background: none;
+  color: white;
+  font-size: 14px;
+}
+
+.nav button.active {
+  background: #334155;
+}
 </style>
 </head>
 
 <body>
 
-<h2>🐟 Fish Cash</h2>
-<div id="app"></div>
+<div class="header">🐟 Fish Cash</div>
+
+<div class="container" id="app"></div>
 
 <div class="nav">
-<button onclick="profile()">Profile</button>
-<button onclick="fishing()">Fishing</button>
-<button onclick="donate()">Donate</button>
+  <button id="btnProfile" onclick="profile()">Profile</button>
+  <button id="btnFishing" onclick="fishing()">Fishing</button>
+  <button id="btnDonate" onclick="donate()">Donate</button>
 </div>
 
 <script>
 let fc = 100;
 let gc = 10;
 
+function setActive(btnId){
+  document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById(btnId).classList.add("active");
+}
+
+// ================= PROFILE =================
 function profile(){
+  setActive("btnProfile");
+
+  let user = Telegram.WebApp.initDataUnsafe.user;
+
   document.getElementById("app").innerHTML = `
-  <div class="card">
-  <h3>Profile</h3>
-  ID: ${Telegram.WebApp.initDataUnsafe.user.id}<br><br>
-  FC: ${fc}<br>
-  GC: ${gc}<br><br>
-  Referral: +10 FC
-  </div>`;
+    <div class="card">
+      <h3>👤 Profile</h3>
+      ID: ${user?.id || "unknown"}<br><br>
+      💰 Fish Coin: ${fc}<br>
+      💎 Gold Coin: ${gc}<br><br>
+      🔗 Referral: +10 FC за друга
+    </div>
+  `;
 }
 
+// ================= FISHING =================
 function fishing(){
+  setActive("btnFishing");
+
   document.getElementById("app").innerHTML = `
-  <div class="card">
-  <h3>Fishing</h3>
-  FC: ${fc} | GC: ${gc}<br><br>
+    <div class="card">
+      <h3>🎣 Fishing</h3>
 
-  <input id="bet" type="number" value="10"><br><br>
+      Баланс:<br>
+      FC: ${fc} | GC: ${gc}<br><br>
 
-  <select id="cur">
-    <option value="fc">Fish Coin</option>
-    <option value="gc">Gold Coin</option>
-  </select><br><br>
+      Ставка:<br>
+      <input id="bet" type="number" value="10"><br><br>
 
-  <button onclick="go()">🎣 Ловити</button>
-  </div>`;
+      Валюта:<br>
+      <select id="cur">
+        <option value="fc">Fish Coin</option>
+        <option value="gc">Gold Coin</option>
+      </select><br><br>
+
+      <button onclick="go()">🎣 Ловити</button>
+    </div>
+  `;
 }
 
+// ================= DONATE =================
 function donate(){
+  setActive("btnDonate");
+
   document.getElementById("app").innerHTML = `
-  <div class="card">
-  <h3>Donate</h3>
-  Скоро 💰
-  </div>`;
+    <div class="card">
+      <h3>💰 Donate</h3>
+      Скоро тут буде донат система
+    </div>
+  `;
 }
 
+// ================= GAME =================
 function go(){
   let bet = parseInt(document.getElementById("bet").value);
   let cur = document.getElementById("cur").value;
 
-  if(cur==="fc" && bet<10){ alert("мін 10 FC"); return; }
-  if(cur==="gc" && bet<1){ alert("мін 1 GC"); return; }
-
-  let win = Math.random()>0.5;
-
-  if(cur==="fc"){
-    fc -= bet;
-    if(win) fc += bet*1.5;
-  } else {
-    gc -= bet;
-    if(win) gc += bet*1.5;
+  if(cur === "fc" && bet < 10){
+    alert("Мінімум 10 FC");
+    return;
   }
 
-  alert(win ? "🐟 Виграш x1.5" : "🗑️ Програш");
+  if(cur === "gc" && bet < 1){
+    alert("Мінімум 1 GC");
+    return;
+  }
+
+  let rand = Math.random();
+  let win = rand > 0.5;
+
+  let fish = ["🐟 Карась", "🐠 Короп", "🦈 Щука"];
+  let trash = ["🗑️ Сміття"];
+
+  let result;
+
+  if(win){
+    result = fish[Math.floor(Math.random() * fish.length)];
+  } else {
+    result = trash[0];
+  }
+
+  if(cur === "fc"){
+    fc -= bet;
+    if(win) fc += bet * 1.5;
+  } else {
+    gc -= bet;
+    if(win) gc += bet * 1.5;
+  }
+
+  alert(win ? result + " → Виграш x1.5" : result + " → Програш");
+
   fishing();
 }
 
+// старт
 profile();
 </script>
 
