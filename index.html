@@ -3,16 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body { background:#0f172a; color:white; font-family:Arial; text-align:center; }
+.nav { position:fixed; bottom:0; width:100%; display:flex; }
+.nav button { flex:1; padding:15px; background:#1e293b; color:white; border:none; }
+.card { margin:20px; padding:20px; background:#1e293b; border-radius:10px; }
+</style>
 </head>
+
 <body>
 
 <h2>🐟 Fish Cash</h2>
+<div id="app"></div>
 
+<div class="nav">
 <button onclick="profile()">Profile</button>
 <button onclick="fishing()">Fishing</button>
 <button onclick="donate()">Donate</button>
-
-<div id="app"></div>
+</div>
 
 <script>
 let fc = 100;
@@ -20,24 +29,21 @@ let gc = 10;
 
 function profile(){
   document.getElementById("app").innerHTML = `
+  <div class="card">
   <h3>Profile</h3>
-  ID: ${Telegram.WebApp.initDataUnsafe.user.id}<br>
+  ID: ${Telegram.WebApp.initDataUnsafe.user.id}<br><br>
   FC: ${fc}<br>
-  GC: ${gc}<br>
+  GC: ${gc}<br><br>
   Referral: +10 FC
-  `;
-}
-
-function donate(){
-  document.getElementById("app").innerHTML = "Donate скоро";
+  </div>`;
 }
 
 function fishing(){
   document.getElementById("app").innerHTML = `
+  <div class="card">
   <h3>Fishing</h3>
   FC: ${fc} | GC: ${gc}<br><br>
 
-  Ставка:
   <input id="bet" type="number" value="10"><br><br>
 
   <select id="cur">
@@ -46,35 +52,39 @@ function fishing(){
   </select><br><br>
 
   <button onclick="go()">🎣 Ловити</button>
-  `;
+  </div>`;
+}
+
+function donate(){
+  document.getElementById("app").innerHTML = `
+  <div class="card">
+  <h3>Donate</h3>
+  Скоро 💰
+  </div>`;
 }
 
 function go(){
   let bet = parseInt(document.getElementById("bet").value);
   let cur = document.getElementById("cur").value;
 
-  if(cur === "fc" && bet < 10){
-    alert("мін 10 FC"); return;
-  }
+  if(cur==="fc" && bet<10){ alert("мін 10 FC"); return; }
+  if(cur==="gc" && bet<1){ alert("мін 1 GC"); return; }
 
-  if(cur === "gc" && bet < 1){
-    alert("мін 1 GC"); return;
-  }
+  let win = Math.random()>0.5;
 
-  let r = Math.random();
-  let win = r > 0.5;
-
-  if(cur === "fc"){
+  if(cur==="fc"){
     fc -= bet;
-    if(win) fc += bet * 1.5;
+    if(win) fc += bet*1.5;
   } else {
     gc -= bet;
-    if(win) gc += bet * 1.5;
+    if(win) gc += bet*1.5;
   }
 
   alert(win ? "🐟 Виграш x1.5" : "🗑️ Програш");
   fishing();
 }
+
+profile();
 </script>
 
 </body>
